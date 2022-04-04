@@ -1,0 +1,27 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: STORE_TO 4344 4345 
+Controller replied to store deni.txt in these Dstores: 4344 4345 
+Connection established to port 4344
+Message sent to port 4344: STORE deni.txt 6
+Storing file deni.txt to Dstore 4344
+Message received from port 4344: ACK
+ACK received from Dstore 4344 to store file deni.txt
+Store of file deni.txt to Dstore 4344 successfully completed
+Connection established to port 4345
+Message sent to port 4345: STORE deni.txt 6
+Storing file deni.txt to Dstore 4345
+Message received from port 4345: ACK
+ACK received from Dstore 4345 to store file deni.txt
+Store of file deni.txt to Dstore 4345 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni.txt completed
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST
+List operation successfully completed
