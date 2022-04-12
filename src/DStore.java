@@ -2,27 +2,25 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Stack;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
 
 public class DStore implements Runnable {
     //TODO if folders already exist add files to stack
-    private ArrayList<File> files;
+    private HashMap<String, Long> files;
     private final int port;
     private final int cPort;
     private long timeout;
     private final String fileFolder;
     private ServerSocket ss;
-    private Stack<File> arrayDeque;
 
     public DStore(int port, int cPort, long timeout, String fileFolder) {
         this.port = port;
         this.cPort = cPort;
         this.timeout = timeout;
         this.fileFolder = fileFolder;
-        this.files = new ArrayList<>();
-        this.arrayDeque = new Stack<>();
+        this.files = new HashMap<>();
         try {
             this.ss = new ServerSocket(port);
         } catch (IOException e) {
@@ -30,7 +28,7 @@ public class DStore implements Runnable {
         }
     }
 
-    public ArrayList<File> getFiles() {
+    public HashMap<String, Long> getFiles() {
         return files;
     }
 
@@ -56,71 +54,106 @@ public class DStore implements Runnable {
 
     @Override
     public void run() {
+
+        //Connection with controller
         try {
             Socket controllerSocket = new Socket();
             controllerSocket.connect(new InetSocketAddress(cPort));
+            OutputStream out = controllerSocket.getOutputStream();
+            PrintWriter printWriter = new PrintWriter(out);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(controllerSocket.getInputStream()));
+            printWriter.println("JOIN " + port);
+            printWriter.flush();
             new Thread(() -> {
-                while (true) {
-                    try {
-                        OutputStream out = controllerSocket.getOutputStream();
-                        PrintWriter printWriter = new PrintWriter(out);
-                        printWriter.println(port);
-                        printWriter.flush();
-                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(controllerSocket.getInputStream()));
-                        String received;
-                        if ((received = bufferedReader.readLine()) != null) {
-                            if (received.contains("aa")) {
-
-
-                                out.close();
+                try {
+                    while (true) {
+                        String received = bufferedReader.readLine();
+                        if (received != null) {
+                            String[] input = received.split(" ");
+                            if (input[0].equals("REMOVE")) {
+                                String fileName = input[1];
+                                System.out.println(88);
+                                if (files.containsKey(fileName)) {
+                                    System.out.println(77);
+                                    printWriter.println("REMOVE_ACK " + fileName);
+                                    printWriter.flush();
+                                    Path filePath = Path.of(fileFolder + "/" + fileName);
+                                    Files.delete(filePath);
+                                    files.remove(fileName);
+                                } else {
+                                    printWriter.println("ERROR_FILE_DOES_NOT_EXIST " + fileName);
+                                    printWriter.flush();
+                                }
+                            } else {
+                                //Ignore and log
                             }
-                            //TODO store_ack
                         }
-
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
                     }
+
+                } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
             }).start();
 
 
-            Socket clientSocket = ss.accept();
+            //Communication with client
             new Thread(() -> {
-                BufferedReader in1 = null;
-                PrintWriter out1 = null;
-                try {
-                    in1 = new BufferedReader(
-                            new InputStreamReader(clientSocket.getInputStream()));
-                    out1 = new PrintWriter(clientSocket.getOutputStream());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 String input;
                 while (true) {
+                    Socket clientSocket = null;
                     try {
-                        if ((input = in1.readLine()) != null) {
-                            if(input.contains("STORE")){
+                        clientSocket = ss.accept();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    BufferedReader in1 = null;
+                    PrintWriter out1 = null;
+                    try {
+                        in1 = new BufferedReader(
+                                new InputStreamReader(clientSocket.getInputStream()));
+                        out1 = new PrintWriter(clientSocket.getOutputStream());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    BufferedReader finalIn = in1;
+                    PrintWriter finalOut = out1;
+                    try {
+                        input = finalIn.readLine();
+                        if (input != null) {
+                            String[] inputSplit = input.split(" ");
+                            if (inputSplit[0].equals("STORE")) {
                                 String[] temp = input.split(" ");
                                 String fileName = temp[1];
                                 long fileSize = Long.parseLong(temp[2]);
                                 File file = new File(fileFolder, fileName); //TODO check
                                 if (!file.exists()) {
                                     if (file.createNewFile()) {
-                                        files.add(file);
+                                        files.put(fileName, fileSize);
                                         System.out.println("The file " + fileName + " has been created.");
                                     } else {
                                         System.out.println("The file already exists.");
                                     }
                                 }
-                                System.out.println(56);
-                                out1.println("ACK");
-                                out1.flush();
-                                input = in1.readLine();
+                                finalOut.println("ACK");
+                                finalOut.flush();
+                                input = finalIn.readLine();
                                 FileWriter fileWriter = new FileWriter(file);
                                 fileWriter.write(input);
                                 fileWriter.flush();
-                                out1.println("STORE_ACK " + file.getName());
-                                out1.flush();
+                                printWriter.println("STORE_ACK " + file.getName());
+                                printWriter.flush();
+                            } else if (inputSplit[0].equals("LOAD_DATA")) {
+                                String filename = inputSplit[1];
+                                if (files.containsKey(filename)) {
+                                    Path filePath = Path.of(fileFolder + "/" + filename);
+                                    String content = Files.readString(filePath);
+                                    finalOut.println(content);
+                                    finalOut.flush();
+                                } else {
+                                    //Handle error
+                                }
+                            } else {
+                                //Ignore and log
                             }
                         }
                     } catch (IOException e) {
@@ -129,7 +162,8 @@ public class DStore implements Runnable {
                 }
             }).start();
 
-        } catch (IOException e) {
+        } catch (
+                IOException e) {
             e.printStackTrace();
         }
     }
