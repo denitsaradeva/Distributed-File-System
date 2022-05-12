@@ -2,16 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23688d47-34cf-4275-a030-44cf0dac7682" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Distributed-File-System.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DStore4343Files/deni.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/ClientMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/ClientMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/DistributedFileSystemBeforePers/Controller.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/DistributedFileSystemBeforePers/Controller.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/DistributedFileSystemBeforePers/DStore.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/DistributedFileSystemBeforePers/DStore.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/DStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DStore4344Files/deni.txt" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/ClientHandler.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DStore4353Files/deni.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DStore4353Files/deni2.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/DStore4353Files/deni4.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DStoreHandler.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/DStoreHandler.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,22 +22,29 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="27iJbETs8PTQc6TqlnCQ08jACcs" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
     "last_opened_file_path": "/home/denitsa/Desktop/Distributed-File-System",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
     "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
   }
 }]]></component>
   <component name="RunManager">
     <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Controller" />
       <module name="Distributed-File-System" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -56,6 +60,7 @@
       <option name="presentableId" value="Default" />
       <updated>1649797043035</updated>
       <workItem from="1649797044591" duration="168000" />
+      <workItem from="1652375594379" duration="594000" />
     </task>
     <servers />
   </component>
@@ -74,6 +79,7 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <ignored-roots>
       <path value="$PROJECT_DIR$/.." />
     </ignored-roots>
