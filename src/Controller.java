@@ -73,7 +73,7 @@ public class Controller implements Runnable {
 
     @Override
     public void run() {
-        //   rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 30000, TimeUnit.MILLISECONDS);
+        rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 50000, TimeUnit.MILLISECONDS);
 
         Socket dStore = null;
 
@@ -162,6 +162,10 @@ public class Controller implements Runnable {
                 }
                 portsToStore.append(port).append(" ");
                 index.get(input[1]).add(port);
+            }
+
+            if (portsToStore.toString().split(" ").length < R) {
+                rebalanceReplication();
             }
             finalOut.println("STORE_TO " + portsToStore);
             finalOut.flush();
@@ -339,12 +343,50 @@ public class Controller implements Runnable {
     }
 
     private synchronized void rebalanceReplication() {
+//        System.out.println("Rebalance Replication Check Starts...");
+//        //   HashMap<String, ArrayList<Integer>> copy = new HashMap<>(index);
+//        // Collections.copy(copy, index);
+//        for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
+//            while (entry.getValue().size() - 1 != R) {
+//                for (Integer port : transformedIndex.keySet()) {
+//                    if (!entry.getValue().contains(port)) {
+//                        StringBuilder result = new StringBuilder("1 ");
+//                        result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
+//                        System.out.println(result);
+//                        String toSend = "REBALANCE " + result;
+//
+//                        //Sending the rebalance request
+//                        Socket current = portsAndSockets.get(entry.getValue().get(1));
+//
+//                        try {
+//                            PrintWriter printWriter = new PrintWriter(current.getOutputStream());
+//                            printWriter.println(toSend);
+//                            printWriter.flush();
+//                        } catch (IOException e) {
+//                            System.out.println("EError6");
+//                            e.printStackTrace();
+//                        }
+//
+//                        //Updating index
+//                        index.get(entry.getKey()).add(port);
+//
+//                        for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
+//                            System.out.println(listEntry.getKey() + " " + listEntry.getValue());
+//                        }
+//                        //    index=copy;
+//                        transformIndex();
+//                    }
+//                }
+//            }
+//        }
         System.out.println("Rebalance Replication Check Starts...");
-        //   HashMap<String, ArrayList<Integer>> copy = new HashMap<>(index);
-        // Collections.copy(copy, index);
         for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
             while (entry.getValue().size() - 1 != R) {
                 for (Integer port : transformedIndex.keySet()) {
+                    System.out.println("Adding a file to a dstore");
+                    if (entry.getValue().size() - 1 == R) {
+                        break;
+                    }
                     if (!entry.getValue().contains(port)) {
                         StringBuilder result = new StringBuilder("1 ");
                         result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
@@ -369,7 +411,7 @@ public class Controller implements Runnable {
                         for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
                             System.out.println(listEntry.getKey() + " " + listEntry.getValue());
                         }
-                        //    index=copy;
+
                         transformIndex();
                     }
                 }
@@ -445,9 +487,9 @@ public class Controller implements Runnable {
     public void writeToClient(String operation, String message, String operationVar, int port) {
         if (operation.equals("Store")) {
             storeCount--;
-            ArrayList<Integer> current = index.get(operationVar);
-            current.add(port);
-            index.replace(operationVar, current);
+//            ArrayList<Integer> current = index.get(operationVar);
+//            current.add(port);
+//            index.replace(operationVar, current);
             if (storeCount == 0) {
                 clientPrinter.println(message);
                 clientPrinter.flush();

@@ -82,34 +82,13 @@ public class DStoreHandler extends Thread {
                         System.out.println("Dstore " + port + " disconnected.");
                         controller.removePort(port);
                         System.out.println("Records deleted.");
-                       // File file = new File("DStore" + port + "Files");
-//                        for (File current : file.listFiles()) {
-//                            current.delete();
-//                        }
-//                        System.out.println("Files deleted.");
-                       // file.delete();
-
-//                        File[] list = file.listFiles();
-//                        if (list != null) {
-//                            for (File temp : list) {
-//                                //recursive delete
-//                                temp.delete();
-//                               // System.out.println("Visit " + temp);
-//                            }
-//                        }
-//
-//                        if (file.delete()) {
-//                            System.out.printf("Delete : %s%n", file);
-//                        } else {
-//                            System.err.printf("Unable to delete file or directory : %s%n", file);
-//                        }
-//                        System.out.println("Directory deleted.");
+                        controller.rebalanceOperationInit();
                         return;
                     }
                     input = dIn.readLine();
                 }
             } catch (IOException e) {
-                System.out.println("here");
+               // System.out.println("here");
                 e.printStackTrace();
             }
         }).start();
