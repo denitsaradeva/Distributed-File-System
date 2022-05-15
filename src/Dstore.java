@@ -13,31 +13,29 @@ public class Dstore implements Runnable {
     //TODO if folders already exist add files to stack
     private HashMap<String, Long> files;
     private final int port;
-    private final int cPort;
+  //  private final int cPort;
     private long timeout;
     private final String fileFolder;
-    private PrintWriter controllerWriter;
-    private BufferedReader controllerReader;
+    private final PrintWriter controllerWriter;
+    private final BufferedReader controllerReader;
     private ServerSocket ss;
 
-
-    private Socket controllerSocket;
 
     public Dstore(int port, int cPort, long timeout, String fileFolder) {
         System.out.println("Dstore creation");
         this.port = port;
-        this.cPort = cPort;
+      //  this.cPort = cPort;
         this.timeout = timeout;
         this.fileFolder = fileFolder;
         this.files = new HashMap<>();
         System.out.println("Dstore creation1");
         try {
-            controllerSocket = new Socket(InetAddress.getLoopbackAddress(), cPort);
-            //controllerSocket.connect(new InetSocketAddress(cPort));
+            Socket controllerSocket = new Socket(InetAddress.getLoopbackAddress(), cPort);
             OutputStream out = controllerSocket.getOutputStream();
             controllerWriter = new PrintWriter(out);
             controllerReader = new BufferedReader(new InputStreamReader(controllerSocket.getInputStream()));
         } catch (IOException e) {
+            System.out.println("Error9");
             throw new RuntimeException(e);
         }
         System.out.println("Dstore creation2");
@@ -48,6 +46,7 @@ public class Dstore implements Runnable {
             this.ss = new ServerSocket();
             ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
         } catch (IOException e) {
+            System.out.println("Error8");
             e.printStackTrace();
         }
         System.out.println("Dstore creation4");
@@ -91,86 +90,103 @@ public class Dstore implements Runnable {
                     String received = controllerReader.readLine();
                     if (received != null) {
                         String[] input = received.split(" ");
-                        if (input[0].equals("REMOVE")) {
-                            removeOperation(input, controllerWriter);
-                        } else if (input[0].equals("LIST")) {
-                            controllerWriter.println("LIST " + getFileNames());
-                            controllerWriter.flush();
-                        } else if (input[0].equals("REBALANCE")) {
-                            System.out.println("Starting rebalance: " + Arrays.toString(input));
-                            int NFilesToStore = Integer.parseInt(input[1]);
-                            rebalanceStore(NFilesToStore, input);
-                            rebalanceRemove(NFilesToStore, input);
-                        } else if (input[0].equals("ACK")) {
-                            System.out.println(24);
-                        } else {
-                            System.out.println(received);
+                        switch (input[0]) {
+                            case "REMOVE":
+                                removeOperation(input, controllerWriter);
+                                break;
+                            case "LIST":
+                                controllerWriter.println("LIST " + getFileNames());
+                                controllerWriter.flush();
+                                break;
+                            case "REBALANCE":
+                                synchronized (this) {
+                                    System.out.println("Starting rebalance: " + Arrays.toString(input));
+                                    int NFilesToStore = Integer.parseInt(input[1]);
+                                    rebalanceStore(NFilesToStore, input);
+                                    rebalanceRemove(NFilesToStore, input);
+                                }
+                                break;
+                            case "ACK":
+                                System.out.println(24);
+                                break;
+                            default:
+                                System.out.println(received);
+                                break;
                         }
                     }
                 }
 
             } catch (IOException e1) {
+                System.out.println("Error7");
                 e1.printStackTrace();
             }
         }).start();
 
         new Thread(() -> {
-            try {
-                System.out.println("Initializing handler.");
-                while (true) {
-                    new ClientDStoreHandler(ss.accept(), this).start();
+            System.out.println("Initializing handler.");
+            while (true) {
+                try {
+                    Socket currentSocket = ss.accept();
+                    new ClientDStoreHandler(currentSocket, this).start();
+                } catch (IOException e1) {
+                    System.out.println("Error6");
+                    e1.printStackTrace();
                 }
-
-            } catch (IOException e1) {
-                e1.printStackTrace();
             }
+
         }).start();
     }
 
-    public void receiveMessages(String input, PrintWriter printWriter, OutputStream outputStream, InputStream inputStream) {
+    public void receiveMessages(String input, ClientDStoreHandler clientDStoreHandler) {
         try {
-//            PrintWriter printWriter = clientDStoreHandler.getdOut();
-//            // BufferedReader bufferedReader = clientDStoreHandler.getdIn();
-//            OutputStream outputStream = clientDStoreHandler.getOutputStream();
-//            InputStream inputStream = clientDStoreHandler.getInputStream();
+            PrintWriter printWriter = clientDStoreHandler.getdOut();
+            OutputStream outputStream = clientDStoreHandler.getOutputStream();
+            InputStream inputStream = clientDStoreHandler.getInputStream();
+
             System.out.println("Receiving a new message..");
-            //  if (input != null) {
-            System.out.println(input);
+
             String[] inputSplit = input.split(" ");
-            if (inputSplit[0].equals("STORE")) {
-                storeOperation(inputSplit, printWriter, controllerWriter, inputStream);
-            } else if (inputSplit[0].equals("LOAD_DATA")) {
-                String filename = inputSplit[1];
-                FileInputStream in = new FileInputStream(fileFolder + "/" + filename);
-                if (files.containsKey(filename)) {
-                    byte[] buffer = new byte[1024];
-                    int len;
-                    while ((len = in.read(buffer)) != -1) {
+            switch (inputSplit[0]) {
+                case "STORE":
+                    storeOperation(inputSplit, printWriter, controllerWriter, inputStream);
+                    break;
+                case "LOAD_DATA":
+                    String filename = inputSplit[1];
+                    if (files.containsKey(filename)) {
+                        FileInputStream in = new FileInputStream(fileFolder + "/" + filename);
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = in.read(buffer)) != -1) {
+                        }
+                        outputStream.write(buffer);
+                        outputStream.flush();
+                        in.close();
+                    } else {
+                        clientDStoreHandler.getdStoreSocket().close();
                     }
-                    outputStream.write(buffer);
-                    outputStream.flush();
-                    in.close();
-                } else {
-                    //Handle error
-                }
-            } else if (inputSplit[0].equals("REBALANCE_STORE")) {
-                System.out.println(33);
-                String fileName = inputSplit[1];
-                Long fileSize = Long.parseLong(inputSplit[2]);
-                File file = new File(fileFolder, fileName);
-                storeFile(fileName, fileSize, file);
-                printWriter.println("ACK");
-                printWriter.flush(); //Doesn't go where I want it
-            } else if (inputSplit[0].equals("ACK")) {
-                System.out.println(77);
-            } else {
-                System.out.println(input);
-                //Ignore and log
+                    break;
+                case "REBALANCE_STORE":
+                    synchronized (this) {
+                        System.out.println(33);
+                        String fileName = inputSplit[1];
+                        Long fileSize = Long.parseLong(inputSplit[2]); //TODO why is null received
+                        File file = new File(fileFolder, fileName);
+                        storeFile(fileName, fileSize, file);
+                        printWriter.println("ACK");
+                        printWriter.flush(); //Doesn't go where I want it
+                    }
+                    break;
+                case "ACK":
+                    System.out.println(77);
+                    break;
+                default:
+                    System.out.println(input);
+                    //Ignore and log
+                    break;
             }
-//            }else{
-//                System.out.println("Empty input!");
-//            }
+
         } catch (IOException e) {
+            System.out.println("Error5");
             e.printStackTrace();
         }
     }
@@ -184,6 +200,7 @@ public class Dstore implements Runnable {
             System.out.println("File stored successfully.");
             return true;
         } catch (IOException e) {
+            System.out.println("Error4");
             e.printStackTrace();
             return false;
         }
@@ -219,6 +236,7 @@ public class Dstore implements Runnable {
                 //TODO
             }
         } catch (IOException e) {
+            System.out.println("Error2");
             e.printStackTrace();
         }
 
@@ -229,6 +247,7 @@ public class Dstore implements Runnable {
         try {
             if (!file.exists()) {
                 if (file.createNewFile()) {
+                    System.out.println(fileSize);
                     files.put(fileName, fileSize);
                     System.out.println("The file " + fileName + " has been created.");
                 } else {
@@ -236,6 +255,7 @@ public class Dstore implements Runnable {
                 }
             }
         } catch (IOException e) {
+            System.out.println("Error3");
             e.printStackTrace();
         }
     }
@@ -246,7 +266,6 @@ public class Dstore implements Runnable {
             String fileName = input[i];
             int storage = Integer.parseInt(input[i + 2]);
             Socket receiver = new Socket(InetAddress.getLoopbackAddress(), storage);
-            //receiver.connect(new InetSocketAddress(DStore));
             OutputStream outStr = receiver.getOutputStream();
             PrintWriter printer = new PrintWriter(outStr);
 
@@ -254,6 +273,8 @@ public class Dstore implements Runnable {
 
             printer.println("REBALANCE_STORE " + fileName + " " + files.get(fileName));
             printer.flush();
+
+            receiver.close();
 
         }
     }
@@ -272,9 +293,7 @@ public class Dstore implements Runnable {
     private void removeOperation(String[] input, PrintWriter printWriter) {
         try {
             String fileName = input[1];
-            System.out.println(88);
             if (files.containsKey(fileName)) {
-                System.out.println(77);
                 printWriter.println("REMOVE_ACK " + fileName);
                 printWriter.flush();
                 Path filePath = Path.of(fileFolder + "/" + fileName);
@@ -285,6 +304,7 @@ public class Dstore implements Runnable {
                 printWriter.flush();
             }
         } catch (IOException e) {
+            System.out.println("Error10");
             e.printStackTrace();
         }
     }

@@ -27,15 +27,18 @@ public class ClientDStoreHandler extends Thread {
         new Thread(() -> {
             while (true) {
                 try {
-                    System.out.println("From handler: waiting for input.");
                     String input = dIn.readLine();
                     if (input != null) {
                         System.out.println("From handler " + input);
-                        dStore.receiveMessages(input, dOut, outputStream, inputStream);
+                        dStore.receiveMessages(input, this);
                         System.out.println("From handler: receive complete.");
+                    }
+                    if (dStoreSocket.isClosed()) {
+                        return;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    return;
                 }
 
             }

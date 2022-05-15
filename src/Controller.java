@@ -18,8 +18,12 @@ public class Controller implements Runnable {
     private final ServerSocket ss;
     // private BufferedReader clientReader;
     private PrintWriter clientPrinter;
+
+    final ScheduledExecutorService rebalanceThread = Executors.newScheduledThreadPool(1);
     int storeCount;
     int removeCount;
+
+    int loadCounter;
 
     private ConcurrentHashMap<Integer, ArrayList<String>> transformedIndex;
     //  private Socket socket;
@@ -33,14 +37,13 @@ public class Controller implements Runnable {
     public Controller(int cPort, int R, long timeout, long rebalancePeriod) throws IOException {
         this.portsAndSockets = new HashMap<>();
         this.index = new ConcurrentHashMap<>();
-        // this.dStoreSockets = new ArrayList<>();
+        this.loadCounter = 1;
         this.cPort = cPort;
         this.storeCount = 0;
         this.removeCount = 0;
         this.R = R;
         this.timeout = timeout;
         this.clientPrinter = null;
-        // this.clientWriter = null;
         this.rebalancePeriod = rebalancePeriod;
         this.ss = new ServerSocket(cPort);
     }
@@ -59,54 +62,61 @@ public class Controller implements Runnable {
             Controller controller = new Controller(cPort, R, timeout, rebalancePeriod);
             controller.run();
         } catch (IOException e) {
+            System.out.println("EError1");
             e.printStackTrace();
         }
     }
 
     @Override
     public void run() {
-//        synchronized (this) {
-//            rebalanceOperationInit();
-//        }
-//        Timer timer = new Timer();
-//        timer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                rebalanceOperationInit();
-//            }
-//        }, 0, rebalancePeriod);
+        rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 30000, TimeUnit.MILLISECONDS);
 
         Socket dStore = null;
 
         //Connecting the DStores
         CountDownLatch countDownLatch = new CountDownLatch(R);
-        //  ExecutorService executorService = Executors.newFixedThreadPool(R);
         for (int i = 0; i < R; i++) {
+            String[] received = null;
+            PrintWriter printer = null;
+            String input = null;
+            BufferedReader dIn = null;
             try {
                 dStore = ss.accept();
+                dIn = new BufferedReader(new InputStreamReader(dStore.getInputStream()));
+                OutputStream out = dStore.getOutputStream();
+                printer = new PrintWriter(out);
+                input = dIn.readLine();
+                received = input.split(" ");
             } catch (IOException e) {
+                System.out.println("EError2");
                 e.printStackTrace();
             }
             String[] flag = new String[0];
 
-            new DStoreHandler(dStore, this, timeout, countDownLatch, flag).start();
-            // executorService.submit(a);
+            assert received != null;
+            if (received[0].equals("JOIN")) {
+                new DStoreHandler(input, dIn, dStore, this, timeout, countDownLatch, flag).start();
+            } else {
+                printer.println("ERROR_NOT_ENOUGH_DSTORES");
+                printer.flush();
+            }
         }
         boolean result = false;
 
         try {
             result = countDownLatch.await(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            System.out.println("EError3");
             e.printStackTrace();
         }
-        //   executorService.shutdown();
+
         if (result) {
-            System.out.println("All DStored have successfully connected.");
+            System.out.println("All DStores have successfully connected.");
         } else {
             System.out.println("Timeout has occurred.");
         }
 
-        //Client comm
+        //Client communication
         new Thread(() -> {
             while (true) {
                 try {
@@ -115,6 +125,7 @@ public class Controller implements Runnable {
                     clientPrinter = new PrintWriter(out);
                     new ClientHandler(currentSocket, this).start();
                 } catch (IOException e) {
+                    System.out.println("EError4");
                     e.printStackTrace();
                 }
             }
@@ -122,7 +133,7 @@ public class Controller implements Runnable {
 
     }
 
-    private synchronized void storeOperation(String[] input, PrintWriter finalOut) {
+    private void storeOperation(String[] input, PrintWriter finalOut) {
         if (index.containsKey(input[1])) {
             finalOut.println("ERROR_FILE_ALREADY_EXISTS");
             finalOut.flush();
@@ -148,18 +159,16 @@ public class Controller implements Runnable {
                     }
                 }
             }
-//            for (int i = 0; i < 1; i++) {
+
+            //For testing rebalance
+//            for (int i = 0; i < 2; i++) {
 //                Random random = new Random();
-//                boolean success = false;
-//                //   while (!success) {
 //                int randIndex = random.nextInt(portsAndSockets.size());
 //                int port = getPort(randIndex);
 //                if (copyOfPorts.contains(port)) {
 //                    portsToStore.append(port).append(" ");
 //                    copyOfPorts.remove(port);
-//                    success = true;
 //                }
-//                //  }
 //            }
 
             finalOut.println("STORE_TO " + portsToStore);
@@ -181,7 +190,7 @@ public class Controller implements Runnable {
         return result;
     }
 
-    private synchronized void removeOperation(String[] input) {
+    private void removeOperation(String[] input) {
         try {
             int count = 0;
             removeCount = index.get(input[1]).size() - 1;
@@ -197,6 +206,7 @@ public class Controller implements Runnable {
                 count++;
             }
         } catch (IOException e) {
+            System.out.println("EError5");
             e.printStackTrace();
         }
     }
@@ -212,101 +222,135 @@ public class Controller implements Runnable {
         int F = index.size();
         int lowerBound = (int) Math.floor((R * F * 1.0) / (N * 1.0));
         int upperBound = (int) Math.ceil((R * F * 1.0) / (N * 1.0));
+        System.out.println(lowerBound);
+        System.out.println(upperBound);
 
         //portToSend - filesToSend - filesToRemove
-        HashMap<Integer, ArrayList<String>> messagesToSend = new HashMap<>();
+//        HashMap<Integer, ArrayList<String>> messagesToSend = new HashMap<>();
         System.out.println(22);
+        int count = 0;
+        rebalanceReplication();
         while (!rebalancedBounds(lowerBound, upperBound) || !rebalancedRepl()) {
-            //  while (!rebalancedBounds(lowerBound, upperBound)) {
-            int low = 0;
-            int high = 0;
-            int count = 0;
-            int reqMeet = 0;
-            for (Map.Entry<Integer, ArrayList<String>> entry : transformedIndex.entrySet()) {
-                if (entry.getValue().size() > lowerBound && high == 0) {
-                    high = entry.getKey();
-                } else if (entry.getValue().size() < upperBound && low == 0) {
-                    low = entry.getKey();
-                } else {
-                    reqMeet = entry.getKey();
-                }
-                if (count == transformedIndex.size() - 1) {
-                    if (low != 0 && high == 0) {
-                        high = reqMeet;
-                    } else if (low == 0 && high != 0) {
-                        low = reqMeet;
-                    }
-                }
-                count++;
+            count++;
+            rebalanceLimits(lowerBound, upperBound);
+            if (count == 20) {
+                break;
             }
-            if (low != 0 && high != 0) {
-                int NFilesToSend = 0;
-                int NFilesToRemove = 0;
-                ArrayList<String> filesToSend = new ArrayList<>();
-                ArrayList<String> filesToRemove = new ArrayList<>();
-                for (String file : transformedIndex.get(high)) {
-                    //Checks whether the destination already has the given file
-                    if (!transformedIndex.get(low).contains(file)) {
-                        //Checks whether the destination has space for files
-                        if (transformedIndex.get(low).size() < upperBound) {
-                            //Checks whether the sender can remove the file after sending it
-                            if (transformedIndex.get(high).size() > lowerBound) {
-                                filesToSend.add(file);
-                                filesToRemove.add(file);
-                                NFilesToSend++;
-                                NFilesToRemove++;
-                            } else {
-                                filesToSend.add(file);
-                                NFilesToSend++;
-                                //TODO
-                            }
+        }
+    }
 
-                            //Preparing the rebalance request
-                            StringBuilder result = new StringBuilder(NFilesToSend + " ");
-                            for (String fileToSend : filesToSend) {
-                                result.append(fileToSend).append(" 1 ").append(low).append(" ");
-                            }
-                            result.append(NFilesToRemove).append(" ");
-                            for (String fileToRemove : filesToRemove) {
-                                result.append(fileToRemove).append(" ");
-                            }
-                            String toSend = "REBALANCE " + result;
+    private void rebalanceLimits(int lowerBound, int upperBound) {
+        System.out.println("Rebalance Limits Check Starts...");
 
-                            //Sending the rebalance request
-                            Socket current = portsAndSockets.get(high);
-                            try {
-                                PrintWriter printWriter = new PrintWriter(current.getOutputStream());
-                                printWriter.println(toSend);
-                                printWriter.flush();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+        int low = 0;
+        int high = 0;
+        int count = 0;
+        int reqMeet = 0;
 
-                            //Updating info
-//                            int highIndex = index.get(file).indexOf(high);
-//                            index.get(file).remove(highIndex);
+        //Finding sender and receiver
+        for (Map.Entry<Integer, ArrayList<String>> entry : transformedIndex.entrySet()) {
+            if (entry.getValue().size() > lowerBound && high == 0) {
+                high = entry.getKey();
+            } else if (entry.getValue().size() < upperBound && low == 0) {
+                low = entry.getKey();
+            } else {
+                reqMeet = entry.getKey();
+            }
+            if (count == transformedIndex.size() - 1) {
+                if (low != 0 && high == 0) {
+                    high = reqMeet;
+                } else if (low == 0 && high != 0) {
+                    low = reqMeet;
+                }
+            }
+            count++;
+        }
 
-                            for (String fileT : filesToSend) {
-                                index.get(fileT).add(low);
-                            }
-
-                            if (filesToRemove.size() != 0) {
-                                for (String fileR : filesToRemove) {
-                                    index.get(fileR).remove((Integer) high);
-                                }
-                            }
+        //If found, send the rebalance request
+        if (low != 0 && high != 0) {
+            int NFilesToSend = 0;
+            int NFilesToRemove = 0;
+            ArrayList<String> filesToSend = new ArrayList<>();
+            ArrayList<String> filesToRemove = new ArrayList<>();
+            for (String file : transformedIndex.get(high)) {
+                //Checks whether the destination already has the given file
+                if (!transformedIndex.get(low).contains(file)) {
+                    //Checks whether the destination has space for files
+                    if (transformedIndex.get(low).size() < upperBound) {
+                        //Checks whether the sender can remove the file after sending it
+                        if (transformedIndex.get(high).size() > lowerBound) {
+                            filesToSend.add(file);
+                            filesToRemove.add(file);
+                            NFilesToSend++;
+                            NFilesToRemove++;
+                            index.get(file).add(low);
+                            index.get(file).remove((Integer) high);
                             transformIndex();
                         }
                     }
                 }
             }
-            for (Map.Entry<Integer, ArrayList<String>> entry : messagesToSend.entrySet()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(entry.getKey()).append(" ");
-                for (String message : entry.getValue()) {
-                    sb.append(message).append(" ");
+
+            //Preparing the rebalance request
+            StringBuilder result = new StringBuilder(NFilesToSend + " ");
+            for (String fileToSend : filesToSend) {
+                result.append(fileToSend).append(" 1 ").append(low).append(" ");
+            }
+            result.append(NFilesToRemove).append(" ");
+            for (String fileToRemove : filesToRemove) {
+                result.append(fileToRemove).append(" ");
+            }
+            String toSend = "REBALANCE " + result;
+
+            //Sending the rebalance request
+            Socket current = portsAndSockets.get(high);
+            try {
+                PrintWriter printWriter = new PrintWriter(current.getOutputStream());
+                printWriter.println(toSend);
+                printWriter.flush();
+            } catch (IOException e) {
+                System.out.println("EError6");
+                e.printStackTrace();
+            }
+            for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
+                System.out.println(entry.getKey() + " " + entry.getValue());
+            }
+        }
+    }
+
+    private synchronized void rebalanceReplication() {
+        System.out.println("Rebalance Replication Check Starts...");
+        for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
+            while (entry.getValue().size() - 1 != R) {
+                for (Integer port : transformedIndex.keySet()) {
+                    if (!entry.getValue().contains(port)) {
+                        StringBuilder result = new StringBuilder("1 ");
+                        result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
+                        System.out.println(result);
+                        String toSend = "REBALANCE " + result;
+
+                        //Sending the rebalance request
+                        Socket current = portsAndSockets.get(entry.getValue().get(1));
+
+                        try {
+                            PrintWriter printWriter = new PrintWriter(current.getOutputStream());
+                            printWriter.println(toSend);
+                            printWriter.flush();
+                        } catch (IOException e) {
+                            System.out.println("EError6");
+                            e.printStackTrace();
+                        }
+
+                        //Updating index
+                        index.get(entry.getKey()).add(port);
+
+                        for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
+                            System.out.println(listEntry.getKey() + " " + listEntry.getValue());
+                        }
+
+                        transformIndex();
+                    }
                 }
-                System.out.println(sb);
             }
         }
     }
@@ -414,38 +458,66 @@ public class Controller implements Runnable {
         }
     }
 
-    public void receiveMessages(String input, PrintWriter clientWriter) {
+    public void receiveMessages(String input, PrintWriter clientWriter, Socket client) {
         if (input != null) {
             String[] received = input.split(" ");
-            if (received[0].equals("LIST")) {
-                clientWriter.println("LIST " + getFilesAsString());
-                clientWriter.flush();
-            } else if (received[0].equals("STORE")) {
-                storeOperation(received, clientWriter);
-            } else if (received[0].equals("REMOVE")) {
-                if (index.containsKey(received[1])) {
-                    removeOperation(received);
-                } else {
-                    clientWriter.println("ERROR_FILE_DOES_NOT_EXIST");
+            switch (received[0]) {
+                case "LIST":
+                    clientWriter.println("LIST " + getFilesAsString());
                     clientWriter.flush();
-                    //Handle error
-                }
-            } else if (received[0].equals("LOAD")) {
-                if (!index.containsKey(received[1])) {
-                    clientWriter.println("ERROR_FILE_DOES_NOT_EXIST");
-                    clientWriter.flush();
-                }
-                ArrayList<Integer> ports = index.get(received[1]);
-                clientWriter.println("LOAD_FROM " + ports.get(1) + " " + ports.get(0));
-                clientWriter.flush();
-            } else if (received[0].equals("RELOAD")) {
-                //TODO
-            } else if (received[0].equals("JOIN")) {
-                System.out.println(99228);
-                //new DStoreHandler(finalClientSocket, this, timeout, null, input).start();
-                //TODO
-            } else {
-                //TODO
+                    break;
+                case "STORE":
+                    storeOperation(received, clientWriter);
+                    break;
+                case "REMOVE":
+                    if (index.containsKey(received[1])) {
+                        removeOperation(received);
+                    } else {
+                        clientWriter.println("ERROR_FILE_DOES_NOT_EXIST");
+                        clientWriter.flush();
+                    }
+                    break;
+                case "LOAD":
+                    if (!index.containsKey(received[1])) {
+                        clientWriter.println("ERROR_FILE_DOES_NOT_EXIST");
+                        clientWriter.flush();
+                    } else {
+                        ArrayList<Integer> ports = index.get(received[1]);
+                        clientWriter.println("LOAD_FROM " + ports.get(1) + " " + ports.get(0));
+                        clientWriter.flush();
+
+                    }
+                    break;
+                case "RELOAD":
+                    System.out.println("Reload starts...");
+                    for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
+                        System.out.println(entry.getKey() + " " + entry.getValue());
+                    }
+                    loadCounter++;
+                    String fileName = received[1];
+                    ArrayList<Integer> ports = index.get(fileName);
+                    if (ports.size() > loadCounter) {
+                        clientWriter.println("LOAD_FROM " + ports.get(loadCounter) + " " + ports.get(0));
+                    } else {
+                        clientWriter.println("ERROR_LOAD");
+                        clientWriter.flush();
+                    }
+                    break;
+                case "JOIN":
+                    System.out.println("A new Dstore is joining...");
+                    BufferedReader dIn = null;
+                    try {
+                        dIn = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String[] flag = new String[0];
+                    CountDownLatch countDownLatch = new CountDownLatch(R);
+                    new DStoreHandler(input, dIn, client, this, timeout, countDownLatch, flag).start();
+                    break;
+                default:
+                    //TODO
+                    break;
             }
 
         }

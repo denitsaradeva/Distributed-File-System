@@ -11,22 +11,34 @@ public class DStoreHandler extends Thread {
     private long timeout;
     private final CountDownLatch countDownLatch;
     private int port;
+    private String input;
+
+    private BufferedReader dIn;
 
     //private String[] message;
 
-    public DStoreHandler(Socket dStore, Controller controller, long timeout, CountDownLatch countDownLatch, String[] message) {
+//    public DStoreHandler(Socket dStore, Controller controller, long timeout, CountDownLatch countDownLatch, String[] message) {
+//        this.dStore = dStore;
+//        this.controller = controller;
+//        this.timeout = timeout;
+//        this.countDownLatch = countDownLatch;
+//      //  this.message = message;
+//    }
+
+    public DStoreHandler(String input, BufferedReader bf, Socket dStore, Controller controller, long timeout, CountDownLatch countDownLatch, String[] message) {
         this.dStore = dStore;
+        this.input = input;
+        this.dIn = bf;
         this.controller = controller;
         this.timeout = timeout;
         this.countDownLatch = countDownLatch;
-      //  this.message = message;
+        //  this.message = message;
     }
 
     @Override
     public void run() {
         new Thread(() -> {
             try {
-                BufferedReader dIn = new BufferedReader(new InputStreamReader(dStore.getInputStream()));
                 //  PrintWriter dOut = new PrintWriter(dStore.getOutputStream());
                 while (true) {
 //                    if (countDownLatch == null) {
@@ -38,7 +50,6 @@ public class DStoreHandler extends Thread {
 //                        //  controller.rebalanceOperationInit();
 //                        System.out.println(32);
 //                    }
-                    String input = dIn.readLine();
                     if (input != null) {
                         if (input.contains("JOIN")) {
                             int port = Integer.parseInt(input.split(" ")[1]);
@@ -67,6 +78,7 @@ public class DStoreHandler extends Thread {
                             //TODO
                         }
                     }
+                    input = dIn.readLine();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
