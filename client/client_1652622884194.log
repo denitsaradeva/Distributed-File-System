@@ -1,0 +1,19 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST deni.txt deni4.txt deni3.txt deni2.txt 
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni2.txt 4
+Store operation started for file deni2.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni2.txt already exists in the data store
+Message sent to port 4339: STORE deni4.txt 10
+Store operation started for file deni4.txt

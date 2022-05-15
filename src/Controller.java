@@ -3,6 +3,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.toMap;
 
 public class Controller implements Runnable {
 
@@ -69,7 +73,7 @@ public class Controller implements Runnable {
 
     @Override
     public void run() {
-        rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 30000, TimeUnit.MILLISECONDS);
+        //   rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 30000, TimeUnit.MILLISECONDS);
 
         Socket dStore = null;
 
@@ -145,20 +149,23 @@ public class Controller implements Runnable {
             index.replace(input[1], current);
 
             StringBuilder portsToStore = new StringBuilder();
-            HashSet<Integer> copyOfPorts = new HashSet<>(portsAndSockets.keySet());
+            int position = 0;
             for (int i = 0; i < R; i++) {
-                Random random = new Random();
-                boolean success = false;
-                while (!success) {
-                    int randIndex = random.nextInt(portsAndSockets.size());
-                    int port = getPort(randIndex);
-                    if (copyOfPorts.contains(port)) {
-                        portsToStore.append(port).append(" ");
-                        copyOfPorts.remove(port);
-                        success = true;
+                int port = getSmallestDstoreByIndex(input[1]);
+                System.out.println(port);
+                if (port == 0) {
+                    System.out.println(1);
+                    position++;
+                    if (position >= portsAndSockets.size()) {
+                        break;
                     }
                 }
+                portsToStore.append(port).append(" ");
+                index.get(input[1]).add(port);
             }
+            finalOut.println("STORE_TO " + portsToStore);
+            finalOut.flush();
+            System.out.println("STORE_TO message sent to Client.");
 
             //For testing rebalance
 //            for (int i = 0; i < 2; i++) {
@@ -170,12 +177,23 @@ public class Controller implements Runnable {
 //                    copyOfPorts.remove(port);
 //                }
 //            }
-
-            finalOut.println("STORE_TO " + portsToStore);
-            //  finalOut.println("STORE_TO " + getPortsAsString());
-            finalOut.flush();
-            System.out.println("STORE_TO message sent to Client.");
         }
+    }
+
+    private int getSmallestDstoreByIndex(String fileName) {
+        transformIndex();
+        HashMap<Integer, ArrayList<String>> copy = new HashMap<>(transformedIndex);
+        copy = copy.entrySet().stream().sorted(comparingInt(e ->
+                e.getValue().size())).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) ->
+        {
+            throw new AssertionError();
+        }, LinkedHashMap::new));
+        for (Map.Entry<Integer, ArrayList<String>> entry : copy.entrySet()) {
+            if (!transformedIndex.get(entry.getKey()).contains(fileName)) {
+                return entry.getKey();
+            }
+        }
+        return 0;
     }
 
     private int getPort(int randIndex) {
@@ -227,16 +245,18 @@ public class Controller implements Runnable {
 
         //portToSend - filesToSend - filesToRemove
 //        HashMap<Integer, ArrayList<String>> messagesToSend = new HashMap<>();
-        System.out.println(22);
-        int count = 0;
-        rebalanceReplication();
+        //  System.out.println(22);
+        //  int count = 0;
         while (!rebalancedBounds(lowerBound, upperBound) || !rebalancedRepl()) {
-            count++;
+            //  count++;
+            transformIndex();
+            rebalanceReplication();
             rebalanceLimits(lowerBound, upperBound);
-            if (count == 20) {
-                break;
-            }
+//            if (count == 20) {
+//                break;
+//            }
         }
+        System.out.println("Rebalance is completed.");
     }
 
     private void rebalanceLimits(int lowerBound, int upperBound) {
@@ -320,6 +340,8 @@ public class Controller implements Runnable {
 
     private synchronized void rebalanceReplication() {
         System.out.println("Rebalance Replication Check Starts...");
+        //   HashMap<String, ArrayList<Integer>> copy = new HashMap<>(index);
+        // Collections.copy(copy, index);
         for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
             while (entry.getValue().size() - 1 != R) {
                 for (Integer port : transformedIndex.keySet()) {
@@ -347,7 +369,7 @@ public class Controller implements Runnable {
                         for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
                             System.out.println(listEntry.getKey() + " " + listEntry.getValue());
                         }
-
+                        //    index=copy;
                         transformIndex();
                     }
                 }
@@ -403,6 +425,20 @@ public class Controller implements Runnable {
             //Handle error
         } else {
             this.portsAndSockets.put(port, socket);
+        }
+    }
+
+    public void removePort(int port) {
+        if (portsAndSockets.containsKey(port)) {
+            portsAndSockets.remove(port);
+            for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
+                if (entry.getValue().contains(port)) {
+                    entry.getValue().remove((Integer) port);
+                }
+            }
+            transformIndex();
+        } else {
+            System.out.println("No such port.");
         }
     }
 

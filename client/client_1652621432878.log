@@ -1,0 +1,121 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST 
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: STORE_TO 4347 4356 
+Controller replied to store deni.txt in these Dstores: 4347 4356 
+Connection established to port 4347
+Message sent to port 4347: STORE deni.txt 6
+Storing file deni.txt to Dstore 4347
+Message received from port 4347: ACK
+ACK received from Dstore 4347 to store file deni.txt
+Store of file deni.txt to Dstore 4347 successfully completed
+Connection established to port 4356
+Message sent to port 4356: STORE deni.txt 6
+Storing file deni.txt to Dstore 4356
+Message received from port 4356: ACK
+ACK received from Dstore 4356 to store file deni.txt
+Store of file deni.txt to Dstore 4356 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni.txt completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni2.txt 4
+Store operation started for file deni2.txt
+Message received from port 4339: STORE_TO 4347 4356 
+Controller replied to store deni2.txt in these Dstores: 4347 4356 
+Connection established to port 4347
+Message sent to port 4347: STORE deni2.txt 4
+Storing file deni2.txt to Dstore 4347
+Message received from port 4347: ACK
+ACK received from Dstore 4347 to store file deni2.txt
+Store of file deni2.txt to Dstore 4347 successfully completed
+Connection established to port 4356
+Message sent to port 4356: STORE deni2.txt 4
+Storing file deni2.txt to Dstore 4356
+Message received from port 4356: ACK
+ACK received from Dstore 4356 to store file deni2.txt
+Store of file deni2.txt to Dstore 4356 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni2.txt completed
+Message sent to port 4339: STORE deni4.txt 10
+Store operation started for file deni4.txt
+Message received from port 4339: STORE_TO 4356 4347 
+Controller replied to store deni4.txt in these Dstores: 4356 4347 
+Connection established to port 4356
+Message sent to port 4356: STORE deni4.txt 10
+Storing file deni4.txt to Dstore 4356
+Message received from port 4356: ACK
+ACK received from Dstore 4356 to store file deni4.txt
+Store of file deni4.txt to Dstore 4356 successfully completed
+Connection established to port 4347
+Message sent to port 4347: STORE deni4.txt 10
+Storing file deni4.txt to Dstore 4347
+Message received from port 4347: ACK
+ACK received from Dstore 4347 to store file deni4.txt
+Store of file deni4.txt to Dstore 4347 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni4.txt completed
+Message sent to port 4339: STORE deni3.txt 5
+Store operation started for file deni3.txt
+Message received from port 4339: STORE_TO 4356 4347 
+Controller replied to store deni3.txt in these Dstores: 4356 4347 
+Connection established to port 4356
+Message sent to port 4356: STORE deni3.txt 5
+Storing file deni3.txt to Dstore 4356
+Message received from port 4356: ACK
+ACK received from Dstore 4356 to store file deni3.txt
+Store of file deni3.txt to Dstore 4356 successfully completed
+Connection established to port 4347
+Message sent to port 4347: STORE deni3.txt 5
+Storing file deni3.txt to Dstore 4347
+Message received from port 4347: ACK
+ACK received from Dstore 4347 to store file deni3.txt
+Store of file deni3.txt to Dstore 4347 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni3.txt completed
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST deni.txt deni4.txt deni3.txt deni2.txt 
+List operation successfully completed
+Message sent to port 4339: LOAD deni.txt
+Load operation for file deni.txt started
+Message received from port 4339: LOAD_FROM 4347 6
+Controller replied to load file deni.txt (size: 6 bytes) from Dstore 4347
+Connection established to port 4347
+Message sent to port 4347: LOAD_DATA deni.txt
+Loading file deni.txt from Dstore 4347
+Load operation of file deni.txt from Dstore 4347 successfully completed
+Message sent to port 4339: LOAD deni4.txt
+Load operation for file deni4.txt started
+Message received from port 4339: LOAD_FROM 4356 10
+Controller replied to load file deni4.txt (size: 10 bytes) from Dstore 4356
+Connection established to port 4356
+Message sent to port 4356: LOAD_DATA deni4.txt
+Loading file deni4.txt from Dstore 4356
+Load operation of file deni4.txt from Dstore 4356 successfully completed
+Message sent to port 4339: LOAD deni3.txt
+Load operation for file deni3.txt started
+Message received from port 4339: LOAD_FROM 4356 5
+Controller replied to load file deni3.txt (size: 5 bytes) from Dstore 4356
+Connection established to port 4356
+Message sent to port 4356: LOAD_DATA deni3.txt
+Loading file deni3.txt from Dstore 4356
+Load operation of file deni3.txt from Dstore 4356 successfully completed
+Message sent to port 4339: LOAD deni2.txt
+Load operation for file deni2.txt started
+Message received from port 4339: LOAD_FROM 4347 4
+Controller replied to load file deni2.txt (size: 4 bytes) from Dstore 4347
+Connection established to port 4347
+Message sent to port 4347: LOAD_DATA deni2.txt
+Loading file deni2.txt from Dstore 4347
+Load operation of file deni2.txt from Dstore 4347 successfully completed
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST deni.txt deni4.txt deni3.txt deni2.txt 
+List operation successfully completed

@@ -1,0 +1,49 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST 
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: STORE_TO 4356 4347 
+Controller replied to store deni.txt in these Dstores: 4356 4347 
+Connection established to port 4356
+Message sent to port 4356: STORE deni.txt 6
+Storing file deni.txt to Dstore 4356
+Message received from port 4356: ACK
+ACK received from Dstore 4356 to store file deni.txt
+Store of file deni.txt to Dstore 4356 successfully completed
+Connection established to port 4347
+Message sent to port 4347: STORE deni.txt 6
+Storing file deni.txt to Dstore 4347
+Message received from port 4347: ACK
+ACK received from Dstore 4347 to store file deni.txt
+Store of file deni.txt to Dstore 4347 successfully completed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni.txt completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni2.txt 4
+Store operation started for file deni2.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: STORE deni4.txt 10
+Store operation started for file deni4.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: STORE deni3.txt 5
+Store operation started for file deni3.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+List operation failed
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+List operation failed

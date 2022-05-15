@@ -172,6 +172,7 @@ public class Dstore implements Runnable {
                         Long fileSize = Long.parseLong(inputSplit[2]); //TODO why is null received
                         File file = new File(fileFolder, fileName);
                         storeFile(fileName, fileSize, file);
+                       // files.put(fileName, fileSize);
                         printWriter.println("ACK");
                         printWriter.flush(); //Doesn't go where I want it
                     }

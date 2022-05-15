@@ -23,7 +23,7 @@ public class ClientHandler extends Thread {
         new Thread(() -> {
             while (true) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                     //  System.out.println("From hCandler: waiting for input.");
                     String input = dIn.readLine();
                     if (input != null) {

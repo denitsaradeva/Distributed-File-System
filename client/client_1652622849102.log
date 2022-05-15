@@ -1,0 +1,36 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST deni.txt deni4.txt deni3.txt deni2.txt 
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni2.txt 4
+Store operation started for file deni2.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni2.txt already exists in the data store
+Message sent to port 4339: STORE deni4.txt 10
+Store operation started for file deni4.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni4.txt already exists in the data store
+Message sent to port 4339: STORE deni3.txt 5
+Store operation started for file deni3.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni3.txt already exists in the data store
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST deni.txt deni4.txt deni3.txt deni2.txt 
+List operation successfully completed
+Message sent to port 4339: LOAD deni.txt
+Load operation for file deni.txt started
+Message received from port 4339: LOAD_FROM 4347 6
+Controller replied to load file deni.txt (size: 6 bytes) from Dstore 4347
+Load operation for file deni.txt from Dstore 4347 failed
+Message sent to port 4339: RELOAD deni.txt
+Retrying to load file deni.txt

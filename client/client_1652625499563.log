@@ -1,0 +1,49 @@
+Connection established to port 4339
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: LIST 
+List operation successfully completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: STORE_TO 4358 4356 
+Controller replied to store deni.txt in these Dstores: 4358 4356 
+Connection established to port 4358
+Message sent to port 4358: STORE deni.txt 6
+Storing file deni.txt to Dstore 4358
+Message received from port 4358: ACK
+ACK received from Dstore 4358 to store file deni.txt
+Store of file deni.txt to Dstore 4358 successfully completed
+Connection established to port 4356
+Message sent to port 4356: STORE deni.txt 6
+Storing file deni.txt to Dstore 4356
+Message received from port 4356: null
+ERROR: Connection closed by Dstore 4356
+Store of file deni.txt to Dstore 4356 failed
+Message received from port 4339: STORE_COMPLETE
+Store operation for file deni.txt completed
+Message sent to port 4339: STORE deni.txt 6
+Store operation started for file deni.txt
+Message received from port 4339: ERROR_FILE_ALREADY_EXISTS
+File to store deni.txt already exists in the data store
+Message sent to port 4339: STORE deni2.txt 4
+Store operation started for file deni2.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: STORE deni4.txt 10
+Store operation started for file deni4.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: STORE deni3.txt 5
+Store operation started for file deni3.txt
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+List operation failed
+Message sent to port 4339: LIST
+List operation started
+Message received from port 4339: null
+ERROR: Connection closed by the Controller
+List operation failed

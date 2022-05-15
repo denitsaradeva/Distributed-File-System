@@ -1,8 +1,6 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 public class DStoreHandler extends Thread {
@@ -39,8 +37,9 @@ public class DStoreHandler extends Thread {
     public void run() {
         new Thread(() -> {
             try {
-                //  PrintWriter dOut = new PrintWriter(dStore.getOutputStream());
                 while (true) {
+//                    if (dStore.isClosed()) {
+                    // }
 //                    if (countDownLatch == null) {
 //                        System.out.println("ajjsjsik");
 //                        int port = Integer.parseInt(message[1]);
@@ -56,6 +55,7 @@ public class DStoreHandler extends Thread {
                             System.out.println("DStore with port " + port + " is connected.");
                             this.port = port;
                             controller.addPort(port, dStore);
+                            controller.rebalanceOperationInit();
                             countDownLatch.countDown();
                         } else if (input.contains("STORE_ACK")) {
                             System.out.println("STORE_ACK received from DStore.");
@@ -75,12 +75,41 @@ public class DStoreHandler extends Thread {
 //                        controller.rebalanceOperation(result);
                             //System.out.println(input.split(" ")[1]);
                         } else {
+                            System.out.println("TO handle");
                             //TODO
                         }
+                    }else{
+                        System.out.println("Dstore " + port + " disconnected.");
+                        controller.removePort(port);
+                        System.out.println("Records deleted.");
+                       // File file = new File("DStore" + port + "Files");
+//                        for (File current : file.listFiles()) {
+//                            current.delete();
+//                        }
+//                        System.out.println("Files deleted.");
+                       // file.delete();
+
+//                        File[] list = file.listFiles();
+//                        if (list != null) {
+//                            for (File temp : list) {
+//                                //recursive delete
+//                                temp.delete();
+//                               // System.out.println("Visit " + temp);
+//                            }
+//                        }
+//
+//                        if (file.delete()) {
+//                            System.out.printf("Delete : %s%n", file);
+//                        } else {
+//                            System.err.printf("Unable to delete file or directory : %s%n", file);
+//                        }
+//                        System.out.println("Directory deleted.");
+                        return;
                     }
                     input = dIn.readLine();
                 }
             } catch (IOException e) {
+                System.out.println("here");
                 e.printStackTrace();
             }
         }).start();
