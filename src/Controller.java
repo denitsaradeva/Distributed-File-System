@@ -73,7 +73,7 @@ public class Controller implements Runnable {
 
     @Override
     public void run() {
-        rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, 50000, TimeUnit.MILLISECONDS);
+        rebalanceThread.scheduleAtFixedRate(this::rebalanceOperationInit, 0, rebalancePeriod, TimeUnit.MILLISECONDS);
 
         Socket dStore = null;
 
@@ -254,8 +254,12 @@ public class Controller implements Runnable {
         while (!rebalancedBounds(lowerBound, upperBound) || !rebalancedRepl()) {
             //  count++;
             transformIndex();
-            rebalanceReplication();
-            rebalanceLimits(lowerBound, upperBound);
+            if (portsAndSockets.size() >= R) {
+                rebalanceReplication();
+                rebalanceLimits(lowerBound, upperBound);
+            }else{
+                break;
+            }
 //            if (count == 20) {
 //                break;
 //            }
@@ -343,79 +347,45 @@ public class Controller implements Runnable {
     }
 
     private synchronized void rebalanceReplication() {
-//        System.out.println("Rebalance Replication Check Starts...");
-//        //   HashMap<String, ArrayList<Integer>> copy = new HashMap<>(index);
-//        // Collections.copy(copy, index);
-//        for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
-//            while (entry.getValue().size() - 1 != R) {
-//                for (Integer port : transformedIndex.keySet()) {
-//                    if (!entry.getValue().contains(port)) {
-//                        StringBuilder result = new StringBuilder("1 ");
-//                        result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
-//                        System.out.println(result);
-//                        String toSend = "REBALANCE " + result;
-//
-//                        //Sending the rebalance request
-//                        Socket current = portsAndSockets.get(entry.getValue().get(1));
-//
-//                        try {
-//                            PrintWriter printWriter = new PrintWriter(current.getOutputStream());
-//                            printWriter.println(toSend);
-//                            printWriter.flush();
-//                        } catch (IOException e) {
-//                            System.out.println("EError6");
-//                            e.printStackTrace();
-//                        }
-//
-//                        //Updating index
-//                        index.get(entry.getKey()).add(port);
-//
-//                        for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
-//                            System.out.println(listEntry.getKey() + " " + listEntry.getValue());
-//                        }
-//                        //    index=copy;
-//                        transformIndex();
-//                    }
-//                }
-//            }
-//        }
         System.out.println("Rebalance Replication Check Starts...");
         for (Map.Entry<String, ArrayList<Integer>> entry : index.entrySet()) {
-            while (entry.getValue().size() - 1 != R) {
-                for (Integer port : transformedIndex.keySet()) {
-                    System.out.println("Adding a file to a dstore");
-                    if (entry.getValue().size() - 1 == R) {
-                        break;
+
+            // while (entry.getValue().size() - 1 != R) {
+            for (Integer port : transformedIndex.keySet()) {
+                if (entry.getValue().size() - 1 == R) {
+                    break;
+                }
+                System.out.println("Adding a file to a dstore");
+
+                if (!entry.getValue().contains(port)) {
+                    StringBuilder result = new StringBuilder("1 ");
+                    result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
+                    System.out.println(result);
+                    String toSend = "REBALANCE " + result;
+
+                    //Sending the rebalance request
+                    Socket current = portsAndSockets.get(entry.getValue().get(1));
+
+                    try {
+                        PrintWriter printWriter = new PrintWriter(current.getOutputStream());
+                        printWriter.println(toSend);
+                        printWriter.flush();
+                    } catch (IOException e) {
+                        System.out.println("EError6");
+                        e.printStackTrace();
                     }
-                    if (!entry.getValue().contains(port)) {
-                        StringBuilder result = new StringBuilder("1 ");
-                        result.append(entry.getKey()).append(" 1 ").append(port).append(" 0");
-                        System.out.println(result);
-                        String toSend = "REBALANCE " + result;
 
-                        //Sending the rebalance request
-                        Socket current = portsAndSockets.get(entry.getValue().get(1));
+                    //Updating index
+                    index.get(entry.getKey()).add(port);
 
-                        try {
-                            PrintWriter printWriter = new PrintWriter(current.getOutputStream());
-                            printWriter.println(toSend);
-                            printWriter.flush();
-                        } catch (IOException e) {
-                            System.out.println("EError6");
-                            e.printStackTrace();
-                        }
-
-                        //Updating index
-                        index.get(entry.getKey()).add(port);
-
-                        for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
-                            System.out.println(listEntry.getKey() + " " + listEntry.getValue());
-                        }
-
-                        transformIndex();
+                    for (Map.Entry<String, ArrayList<Integer>> listEntry : index.entrySet()) {
+                        System.out.println(listEntry.getKey() + " " + listEntry.getValue());
                     }
+
+                    transformIndex();
                 }
             }
+            // }
         }
     }
 
@@ -576,6 +546,7 @@ public class Controller implements Runnable {
                     ArrayList<Integer> ports = index.get(fileName);
                     if (ports.size() > loadCounter) {
                         clientWriter.println("LOAD_FROM " + ports.get(loadCounter) + " " + ports.get(0));
+                        clientWriter.flush();
                     } else {
                         clientWriter.println("ERROR_LOAD");
                         clientWriter.flush();

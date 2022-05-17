@@ -13,7 +13,7 @@ public class Dstore implements Runnable {
     //TODO if folders already exist add files to stack
     private HashMap<String, Long> files;
     private final int port;
-  //  private final int cPort;
+    //  private final int cPort;
     private long timeout;
     private final String fileFolder;
     private final PrintWriter controllerWriter;
@@ -24,7 +24,7 @@ public class Dstore implements Runnable {
     public Dstore(int port, int cPort, long timeout, String fileFolder) {
         System.out.println("Dstore creation");
         this.port = port;
-      //  this.cPort = cPort;
+        //  this.cPort = cPort;
         this.timeout = timeout;
         this.fileFolder = fileFolder;
         this.files = new HashMap<>();
@@ -152,14 +152,16 @@ public class Dstore implements Runnable {
                     break;
                 case "LOAD_DATA":
                     String filename = inputSplit[1];
+
                     if (files.containsKey(filename)) {
                         FileInputStream in = new FileInputStream(fileFolder + "/" + filename);
-                        byte[] buffer = new byte[1024];
+                        byte[] buffer = new byte[Math.toIntExact(files.get(filename))];
                         int len;
-                        while ((len = in.read(buffer)) != -1) {
+                        while ((len = in.read(buffer)) > 0) {
+                            outputStream.write(buffer, 0, len);
+                            outputStream.flush();
+
                         }
-                        outputStream.write(buffer);
-                        outputStream.flush();
                         in.close();
                     } else {
                         clientDStoreHandler.getdStoreSocket().close();
@@ -172,7 +174,7 @@ public class Dstore implements Runnable {
                         Long fileSize = Long.parseLong(inputSplit[2]); //TODO why is null received
                         File file = new File(fileFolder, fileName);
                         storeFile(fileName, fileSize, file);
-                       // files.put(fileName, fileSize);
+                        // files.put(fileName, fileSize);
                         printWriter.println("ACK");
                         printWriter.flush(); //Doesn't go where I want it
                     }
@@ -295,11 +297,11 @@ public class Dstore implements Runnable {
         try {
             String fileName = input[1];
             if (files.containsKey(fileName)) {
-                printWriter.println("REMOVE_ACK " + fileName);
-                printWriter.flush();
                 Path filePath = Path.of(fileFolder + "/" + fileName);
                 Files.delete(filePath);
                 files.remove(fileName);
+                printWriter.println("REMOVE_ACK " + fileName);
+                printWriter.flush();
             } else {
                 printWriter.println("ERROR_FILE_DOES_NOT_EXIST " + fileName);
                 printWriter.flush();
